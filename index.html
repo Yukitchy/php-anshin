@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PHPの脆弱性、わたしは何かしないといけない？</title>
+<meta name="description" content="2026年10月21日の夜に出るPHPの修正について、サイトを持っている人向けに、やることを3分でまとめました。">
+<meta name="robots" content="noindex">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHPの脆弱性、わたしは何かしないといけない？">
+<meta property="og:description" content="2026年10月21日の夜に出るPHPの修正について、サイトを持っている人向けに、やることを3分でまとめました。">
+<meta property="og:image" content="https://yukitchy.github.io/php-anshin/og.png">
+<meta property="og:url" content="https://yukitchy.github.io/php-anshin/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff;--fg:#1f2328;--accent:#9a6b00}
+@media (prefers-color-scheme:dark){:root{--bg:#14171a;--fg:#eceef0;--accent:#e3ae3a}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Noto Sans JP",-apple-system,"Hiragino Sans",sans-serif;font-size:16px;line-height:1.8;word-break:auto-phrase;line-break:strict;overflow-wrap:anywhere}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+header{padding:40px 0 8px}
+h1,h2,h3{font-weight:900;line-height:1.4;text-wrap:balance;margin:0}
+h1{font-size:clamp(20px,5.8vw,40px);letter-spacing:-.01em}
+h2{font-size:22px;margin-bottom:16px}
+h3{font-size:18px;margin-bottom:8px}
+p{margin:0 0 16px;text-wrap:pretty}
+.lead{margin:16px 0 4px}
+.meta{font-size:14px;opacity:.72;margin:0 0 20px}
+section{padding:48px 0 0}
+a{color:var(--accent);text-underline-offset:3px}
+svg{overflow:visible;display:block;width:100%;height:auto;max-width:420px;margin:0 0 20px}
+svg .l{fill:none;stroke:var(--fg);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+svg .a{stroke:var(--accent)}
+svg .t{fill:color-mix(in srgb,var(--accent) 16%,var(--bg))}
+svg .w{fill:var(--bg)}
+svg text{fill:var(--fg);font-size:15px;font-family:inherit}
+svg .b{font-weight:900}
+svg .ac{fill:var(--accent)}
+svg .m{font-size:13px;opacity:.72}
+.fake{--red:#b3261e}
+@media (prefers-color-scheme:dark){.fake{--red:#f2766d}}
+svg .r{stroke:var(--red)}
+svg text.rt{fill:var(--red)}
+svg .rf{fill:color-mix(in srgb,var(--red) 12%,var(--bg))}
+.cap{font-size:14px;opacity:.72;margin:-8px 0 16px}
+ol.steps{padding:0;margin:0 0 8px;list-style:none;counter-reset:s}
+ol.steps li{counter-increment:s;padding-left:44px;position:relative;margin-bottom:20px}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:2px;width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--bg);font-weight:900;text-align:center;line-height:30px}
+ol.steps b{display:block;font-weight:900}
+.key{font-weight:900;font-size:18px;margin:8px 0 20px}
+.extra{background:color-mix(in srgb,var(--accent) 10%,var(--bg));border-radius:6px;padding:16px}
+.extra h3{font-size:16px;margin-bottom:4px}
+.extra ul{margin:0;padding-left:1.2em}
+.prompt,.tp{background:color-mix(in srgb,var(--accent) 10%,var(--bg));border-radius:6px;padding:16px;margin:0 0 24px}
+.tp{margin:0 0 16px}
+.tp ul{list-style:none;margin:8px 0 0;padding:0}
+.tp label{display:flex;gap:12px;align-items:flex-start;min-height:44px;padding:8px 0;cursor:pointer}
+.tp input{flex:none;width:22px;height:22px;margin:3px 0 0;accent-color:var(--accent)}
+.tp .note{margin:0 0 4px}
+.prompt .txt{white-space:pre-wrap;margin:8px 0 12px}
+.prompt .ph{font-weight:700}
+.tag{display:inline-block;background:var(--accent);color:var(--bg);font-weight:900;font-size:13px;line-height:1;padding:5px 8px;border-radius:6px;margin-right:8px;vertical-align:2px}
+button{font:inherit;font-weight:700;background:var(--accent);color:var(--bg);border:0;border-radius:6px;min-height:44px;padding:0 20px;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+ul.src{padding-left:1.2em;margin:0 0 16px}
+ul.src li{margin-bottom:8px}
+.note{font-size:14px;opacity:.72}
+footer{padding:48px 0 64px;font-size:14px;opacity:.72}
+@media (min-width:720px){h2{font-size:26px}}
+</style>
+</head>
+<body>
+<header>
+<div class="wrap">
+<svg viewBox="0 0 340 150" role="img" aria-label="建物と、その下を通る配管の絵" style="max-width:340px;margin-bottom:12px">
+<rect class="l t" x="20" y="10" width="92" height="96" rx="6"/>
+<path class="l" d="M38 34h18M76 34h18M38 56h18M76 56h18M38 78h18M76 78h18"/>
+<rect class="l t" x="132" y="56" width="52" height="50" rx="6"/>
+<path class="l" d="M146 76h24"/>
+<path class="l" d="M10 108h320"/>
+<path class="l" d="M66 106v18M158 106v18"/>
+<path class="l" d="M10 124h320M10 140h320"/>
+<rect class="l a t" x="104" y="120" width="12" height="24" rx="6"/>
+<rect class="l a t" x="214" y="120" width="12" height="24" rx="6"/>
+<rect class="l a t" x="284" y="120" width="12" height="24" rx="6"/>
+</svg>
+<h1>PHPの脆弱性 わたしは何をする？</h1>
+<p class="lead">2026年10月21日の夜に出るPHPの修正について、サイトを持っている人向けに、やることを3分でまとめました</p>
+<p class="meta">更新 2026年10月21日 17:20（日本時間）</p>
+</div>
+</header>
+
+<main class="wrap">
+
+<section id="which">
+<h2>あなたはどれ？</h2>
+<svg viewBox="0 0 340 396" role="img" aria-label="分岐図。Aサイトを持っていない人はやることなし。BWixなどのサービスだけの人はやることなし。CWordPressやレンタルサーバーの人は下の3つをやる。Dわからない人はプロンプト1を貼る。">
+<text class="b" x="0" y="20">あなたのサイトは？</text>
+<path class="l a" d="M14 34v290"/>
+<rect class="l w" x="40" y="40" width="300" height="66" rx="6"/>
+<rect class="l w" x="40" y="120" width="300" height="88" rx="6"/>
+<rect class="l t a" x="40" y="222" width="300" height="88" rx="6"/>
+<rect class="l w" x="40" y="324" width="300" height="66" rx="6"/>
+<g class="l a w"><circle cx="14" cy="73" r="14"/><circle cx="14" cy="164" r="14"/><circle cx="14" cy="266" r="14"/><circle cx="14" cy="357" r="14"/></g>
+<g class="b ac" text-anchor="middle"><text x="14" y="79">A</text><text x="14" y="170">B</text><text x="14" y="272">C</text><text x="14" y="363">D</text></g>
+<text x="54" y="66">サイトを持っていない</text>
+<a href="#t1-4"><text class="b ac" x="54" y="90">やることなし。偽メールにだけ注意</text></a>
+<text x="54" y="146">Wix STUDIO Squarespace note</text>
+<text x="54" y="168">ペライチ Instagramだけ</text>
+<a href="#t1-4"><text class="b ac" x="54" y="192">やることなし。運営会社が直す</text></a>
+<a href="#c-steps"><text x="54" y="248">WordPressやレンタルサーバーで</text>
+<text x="54" y="270">自分のサイトがある</text>
+<text class="b ac" x="54" y="294">下の3つをやる</text></a>
+<text x="54" y="350">わからない</text>
+<a href="#prompts"><text class="b ac" x="54" y="374">プロンプト1を貼る</text></a>
+</svg>
+<p>当てはまる行がひとつあれば、そこが答えです。</p>
+</section>
+
+<section id="what">
+<h2>そもそも何が起きている？</h2>
+<p>PHPは、Webサイトの裏側で動くプログラムの言語です。WordPressはPHPで動いています。Wix、STUDIO、Squarespace、note、Instagram、ペライチのようなサービスがPHPを使っていても、直すのは運営会社です。</p>
+<svg viewBox="0 0 340 290" role="img" aria-label="たとえ図。建物があなたのサイト、配管がPHP、継ぎ目の穴が脆弱性、修理屋が修正版。">
+<g transform="translate(0,0)">
+<rect class="l t" x="10" y="8" width="34" height="44" rx="6"/>
+<path class="l" d="M19 22h16M19 36h16"/>
+<text class="b" x="64" y="26">あなたのサイト</text>
+<text class="m" x="64" y="48">建物にあたります</text>
+</g>
+<g transform="translate(0,72)">
+<path class="l" d="M4 20h40M4 38h40"/>
+<rect class="l a t" x="19" y="14" width="10" height="30" rx="5"/>
+<text class="b" x="64" y="26">PHP</text>
+<text class="m" x="64" y="48">建物の裏を通る配管にあたります</text>
+</g>
+<g transform="translate(0,144)">
+<path class="l" d="M4 20h14M4 38h14M30 20h14M30 38h14"/>
+<circle class="l a" cx="24" cy="29" r="5"/>
+<text class="b" x="64" y="26">脆弱性</text>
+<text class="m" x="64" y="48">配管の継ぎ目にある穴にあたります</text>
+</g>
+<g transform="translate(0,216)">
+<path class="l t" d="M46 8a11 11 0 0 0-15 14L9 44a4 4 0 0 0 6 6l22-22a11 11 0 0 0 14-15l-8 8-6-2-2-6z"/>
+<text class="b" x="64" y="26">10月21日の修正版</text>
+<text class="m" x="64" y="48">穴をふさぐ修理屋にあたります</text>
+</g>
+</svg>
+<p>PHPのセキュリティチームが、重大な脆弱性2件の修正版を、2026年10月21日 14:00 UTC（日本時間 同日23:00）に公開すると事前に告知しました。脆弱性は、プログラムの弱い部分のことです。深刻さの目安であるCVSS v4.0の値は、2件とも10点満点中9.2です。影響するバージョン、内容、CVE番号は、公開されるまで明かされていません（<a href="https://www.php.net/archive/2026.php#2026-10-20-1">php.netの告知</a>）。</p>
+<p>国家サイバー統括室も、同じ日の13:01に注意喚起を出しました。公開サイトでPHPを使っているか確認し、パッチをすぐ当てられる準備をしてください、という内容です（<a href="https://x.com/cyber_forecast/status/2112756056678134169">国家サイバー統括室の投稿</a>）。今わかっているのは、公開される時刻と深刻度までです。</p>
+</section>
+
+<section id="c-steps">
+<h2>Cの人がやること</h2>
+<p>WordPressをレンタルサーバー（エックスサーバー、mixhost、ロリポップ、さくらなど）に置いている人が対象です。</p>
+<svg viewBox="0 0 340 222" role="img" aria-label="手順図。1サーバー会社のお知らせを見る。2PHPのバージョンを確認する。3WordPressとプラグインを更新する。">
+<path class="l a" d="M30 44v104"/>
+<g class="l a w"><circle cx="30" cy="30" r="14"/><circle cx="30" cy="112" r="14"/><circle cx="30" cy="194" r="14"/></g>
+<g class="b ac" text-anchor="middle"><text x="30" y="36">1</text><text x="30" y="118">2</text><text x="30" y="200">3</text></g>
+<rect class="l t" x="70" y="6" width="34" height="44" rx="6"/>
+<path class="l" d="M78 22h18M78 34h12"/>
+<text class="b" x="120" y="36">お知らせを見る</text>
+<rect class="l t" x="70" y="88" width="34" height="44" rx="6"/>
+<path class="l a" d="M87 120v-18M80 109l7-7 7 7"/>
+<text class="b" x="120" y="118">PHPの版を上げる</text>
+<rect class="l t" x="70" y="170" width="34" height="44" rx="6"/>
+<path class="l a" d="M79 193l6 6 11-12"/>
+<text class="b" x="120" y="200">更新を当てる</text>
+</svg>
+<ol class="steps">
+<li><b>サーバー会社のお知らせを見る</b>契約しているサーバー会社が、PHP本体を更新します。今夜から明日にかけて、お知らせや障害情報のページに更新の案内が出ていないか見てください。</li>
+<li><b>PHPのバージョンを確認する</b>管理画面でPHPのバージョンを選べる場合は、古い版のままだと直りません。サーバー会社が案内する版に上げてください。変更の前にバックアップを取ります。方法が分からなければ、下のプロンプト2を貼ってください。</li>
+<li><b>WordPressとプラグインを更新する</b>管理画面の「ダッシュボード」から「更新」を開き、WordPress本体とプラグインの更新を当てます。</li>
+</ol>
+</section>
+
+<section id="timing">
+<h2>いつ何をする？</h2>
+<p>サイトを持っていない人・サービス型だけの人は、<a href="#t1-4">1の4つ目</a>と<a href="#t3-4">3の4つ目</a>だけで足ります。</p>
+<svg viewBox="0 0 340 82" role="img" aria-label="横軸のタイムライン。左から、今日の23時まで、23時の公開、それ以降の1週間、今後。">
+<path class="l a" d="M20 24h300"/>
+<circle class="l a w" cx="20" cy="24" r="8"/>
+<circle class="l a t" cx="130" cy="24" r="14"/>
+<circle class="l a w" cx="320" cy="24" r="8"/>
+<g class="b" text-anchor="middle"><text x="130" y="68" class="ac">23:00 公開</text></g>
+<text x="0" y="68" class="m">今</text>
+<text x="340" y="68" class="m" text-anchor="end">今後</text>
+<path class="l a" d="M144 24h110" stroke-width="6" opacity=".5"/>
+</svg>
+<div class="timeline">
+<div class="tp" id="t1">
+<h3><span class="tag">1</span>今日の23時まで</h3>
+<ul>
+<li id="t1-1"><label><input type="checkbox">自分がA〜Dのどれか決める</label></li>
+<li id="t1-2"><label><input type="checkbox">サーバー会社の名前と管理画面への入り方を確かめてブックマークする</label></li>
+<li id="t1-3"><label><input type="checkbox">サーバーの自動バックアップがあるか見る。なければ今とる</label></li>
+<li id="t1-4"><label><input type="checkbox">「至急」「アカウント停止」と急かすメールは、差出人のドメインを見てから開く</label></li>
+</ul>
+</div>
+<div class="tp" id="t2">
+<h3><span class="tag">2</span>それ以降（公開後から1週間）</h3>
+<p class="note">23時を過ぎて見ている人は、<a href="https://www.php.net/archive/2026.php#2026-10-20-1">php.net</a>で公開済みか確かめてください。</p>
+<ul>
+<li id="t2-1"><label><input type="checkbox">サーバー会社の「お知らせ」を見る。自動で直すか、自分で上げるかが書いてある</label></li>
+<li id="t2-2"><label><input type="checkbox">影響するバージョンが発表されたら、自分のPHPの版と見比べる（わからなければプロンプト2）</label></li>
+<li id="t2-3"><label><input type="checkbox">WordPress本体・プラグイン・テーマの更新をあてて、スマホでサイトを開いて表示を確かめる</label></li>
+<li id="t2-4"><label><input type="checkbox">サーバー会社の「対応完了」のお知らせを確認したら、この件は終わり</label></li>
+</ul>
+</div>
+<div class="tp" id="t3">
+<h3><span class="tag">3</span>今後に向けての対策</h3>
+<ul>
+<li id="t3-1"><label><input type="checkbox">WordPress・プラグイン・PHPの自動更新をONにする（やり方はプロンプト2の要領で聞く）</label></li>
+<li id="t3-2"><label><input type="checkbox">バックアップを自動化して、月に1回は復元できるか確かめる</label></li>
+<li id="t3-3"><label><input type="checkbox">サーバー会社のお知らせメールを受け取る設定にする</label></li>
+<li id="t3-4"><label><input type="checkbox">使い回しのパスワードをやめて、管理画面に二要素認証を入れる</label></li>
+</ul>
+</div>
+</div>
+</section>
+
+<section id="everyone">
+<h2>全員がやること</h2>
+<p>サイトを持っていない人も、持っている人も同じです。更新を装って、パスワードを入れさせるメールがあります。</p>
+<div class="fake">
+<svg viewBox="0 0 340 376" role="img" aria-label="本物と偽物のメールの比較。差出人、リンク先、急かす言葉、パスワードの4点が違う。">
+<rect class="l a" x="1.25" y="1.25" width="337.5" height="176" rx="6"/>
+<circle class="l a t" cx="24" cy="26" r="11"/>
+<path class="l a" d="M18.5 26l4 4 7-8"/>
+<text class="b ac" x="46" y="32">本物の例</text>
+<text class="m" x="14" y="68">差出人</text><text x="96" y="68">info@example-server.jp</text>
+<text class="m" x="14" y="98">リンク先</text><text x="96" y="98">example-server.jp</text>
+<text class="m" x="14" y="128">急かす言葉</text><text x="96" y="128">なし</text>
+<text class="m" x="14" y="158">パスワード</text><text x="96" y="158">入力を求めない</text>
+<rect class="l r rf" x="1.25" y="198.25" width="337.5" height="176" rx="6"/>
+<circle class="l r w" cx="24" cy="223" r="11"/>
+<path class="l r" d="M19 218l10 10M29 218l-10 10"/>
+<text class="b rt" x="46" y="229">偽物の例</text>
+<text class="m" x="14" y="265">差出人</text><text class="rt" x="96" y="265">support@example-server.xyz</text>
+<text class="m" x="14" y="295">リンク先</text><text class="rt" x="96" y="295">example-login.xyz/verify</text>
+<text class="m" x="14" y="325">急かす言葉</text><text class="rt" x="96" y="325">今すぐ対応しないと停止します</text>
+<text class="m" x="14" y="355">パスワード</text><text class="rt" x="96" y="355">入力させる</text>
+</svg>
+</div>
+<p class="cap">アドレスは見本で、実在しません。</p>
+<p class="key">メールのリンクからパスワードを入れない。自分でブックマークから開く。</p>
+<div class="extra">
+<h3>余裕があれば</h3>
+<ul>
+<li>同じパスワードを複数のサービスで使っている場合は変更する</li>
+<li>使えるサービスでは二要素認証を入れる</li>
+</ul>
+</div>
+</section>
+
+<section id="prompts">
+<h2>そのまま貼れるプロンプト</h2>
+<p>【】の部分を自分の情報に書き換えて、ChatGPTやClaudeなどのAIに貼ってください。パスワードは貼らないでください。</p>
+
+<div class="prompt">
+<h3><span class="tag">1</span>自分のサイトが対象か調べる</h3>
+<p class="txt" id="p1">私のWebサイトは<span class="ph">【サービス名やサーバー名】</span>で作っています。URLは<span class="ph">【URL】</span>です。2026年10月21日に公開されたPHPの重大な脆弱性2件（CVSS 9.2）について、私のサイトはPHPを使っていますか。私が今やるべきことを、専門用語を使わずに、やることがあるかないかの結論から3行で教えてください。わからない情報があれば、作業を始める前に私に質問してください。</p>
+<button type="button" data-copy="p1">コピー</button>
+</div>
+
+<div class="prompt">
+<h3><span class="tag">2</span>PHPの版を上げる手順を聞く</h3>
+<p class="txt" id="p2">私は<span class="ph">【サーバー会社名】</span>のレンタルサーバーでWordPressを使っています。PHPのバージョンを確認して、サーバー会社が案内する新しい版に変える手順を、管理画面のどこを押すかの順番で教えてください。変更前にバックアップを取る方法も入れてください。わからない情報があれば、作業を始める前に私に質問してください。</p>
+<button type="button" data-copy="p2">コピー</button>
+</div>
+
+<div class="prompt">
+<h3><span class="tag">3</span>メールが詐欺か判定する</h3>
+<p class="txt" id="p3">次のメールが本物か詐欺か判定してください。差出人のアドレス、リンク先のドメイン、急かす言葉、パスワードや支払い情報を求めているかを確認して、結論を1行で、理由を3つまでで答えてください。<span class="ph">【メール本文を貼る】</span></p>
+<button type="button" data-copy="p3">コピー</button>
+</div>
+
+<div class="prompt">
+<h3><span class="tag">4</span>家族や上司に説明する</h3>
+<p class="txt" id="p4">PHPの脆弱性の件を、パソコンに詳しくない<span class="ph">【家族・上司・お客さん】</span>に、1分で伝えるための文章を書いてください。怖がらせず、やることがあるかないかをはっきり言い、専門用語は使わないでください。相手の状況: <span class="ph">【Webサイトを持っている／いない】</span></p>
+<button type="button" data-copy="p4">コピー</button>
+</div>
+</section>
+
+<section id="sources">
+<h2>出典</h2>
+<ul class="src">
+<li><a href="https://www.php.net/archive/2026.php#2026-10-20-1">PHP公式サイト 2026年10月20日の告知</a></li>
+<li><a href="https://x.com/cyber_forecast/status/2112756056678134169">国家サイバー統括室（@cyber_forecast）の注意喚起</a></li>
+</ul>
+<p class="note">このページは2026年10月21日時点の公開情報だけで書いています。修正版の公開後に内容が変わることがあります。</p>
+</section>
+</main>
+
+<footer><div class="wrap">作成: ユウキ</div></footer>
+
+<script>
+var K='php-anshin-timeline',cb=[].slice.call(document.querySelectorAll('.timeline input[type=checkbox]'));
+try{var st=JSON.parse(localStorage.getItem(K)||'[]');cb.forEach(function(c,i){c.checked=st.indexOf(i)>-1})}catch(e){}
+cb.forEach(function(c){c.addEventListener('change',function(){try{localStorage.setItem(K,JSON.stringify(cb.map(function(x,i){return x.checked?i:-1}).filter(function(i){return i>-1})))}catch(e){}})});
+document.querySelectorAll('[data-copy]').forEach(function(b){
+  b.addEventListener('click',function(){
+    var t=document.getElementById(b.dataset.copy).textContent.trim();
+    var done=function(ok){
+      b.textContent=ok?'コピーしました':'コピーできませんでした';
+      setTimeout(function(){b.textContent='コピー'},2000);
+    };
+    navigator.clipboard.writeText(t).then(function(){done(true)},function(){done(false)});
+  });
+});
+</script>
+</body>
+</html>
